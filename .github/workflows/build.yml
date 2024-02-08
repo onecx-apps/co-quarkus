@@ -54,7 +54,7 @@ jobs:
       && needs.helm.result == 'success'
       && ( !inputs.native || needs.native.result == 'success')
       && inputs.helmEventTargetRepository != ''
-    uses: onecx-apps/ci-product/.github/workflows/helm-send-event.yml@v2
+    uses: onecx-apps/ci-product/.github/workflows/helm-send-event.yml@v1
     needs: [helm, sonar, native]
     secrets: inherit
     with:
