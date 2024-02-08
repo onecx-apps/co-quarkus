@@ -2,18 +2,42 @@ name: pr
 
 on:
   workflow_call:
+    inputs:  
+      native:
+        description: 'Build native image'
+        default: false
+        required: false
+        type: boolean
 
 jobs:
   dependency-review:
-    uses: onecx-apps/ci-common/.github/workflows/dependency-review.yml@v1
+    uses: onecx-apps/ci-common/.github/workflows/dependency-review.yml@v2
     secrets: inherit
   code-ql:
-    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-codeql.yml@v1
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-codeql.yml@v2
     secrets: inherit
   quarkus:
-    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build.yml@v1
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build.yml@v2
     secrets: inherit
+    with:
+      platform: ''    
+  liquibase:
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-liquibase.yml@v2
+    secrets: inherit
+  native:
+    if: ${{ inputs.native }}
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build-native.yml@v2
+    secrets: inherit
+    needs: [quarkus, liquibase]
+    with:
+      platform: ''
+      args: '-Ob'  # enable quick build mode
   helm:
-    uses: onecx-apps/ci-common/.github/workflows/helm-build.yml@v1
-    needs: quarkus
+    if: |
+      !cancelled()
+      && needs.quarkus.result == 'success'
+      && needs.liquibase.result == 'success'
+      && ( !inputs.native || needs.native.result == 'success')   
+    uses: onecx-apps/ci-common/.github/workflows/helm-build.yml@v2
+    needs: [quarkus, native, liquibase]
     secrets: inherit
