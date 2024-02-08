@@ -11,11 +11,11 @@ on:
 
 jobs:
   docker:
-    uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v1
+    uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v2
     secrets: inherit
   native:
     if: ${{ inputs.native }}
-    uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v1
+    uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v2
     secrets: inherit
     with:
       releaseImageTag: '{{ .Version }}-native'
@@ -25,10 +25,10 @@ jobs:
       !cancelled()
       && needs.docker.result == 'success'
       && ( !inputs.native || needs.native.result == 'success')     
-    uses: onecx-apps/ci-common/.github/workflows/helm-release.yml@v1
+    uses: onecx-apps/ci-common/.github/workflows/helm-release.yml@v2
     needs: [docker, native]
     secrets: inherit
   changelog:
-    uses: onecx-apps/ci-common/.github/workflows/generate-changelog.yml@v1
+    uses: onecx-apps/ci-common/.github/workflows/generate-changelog.yml@v2
     needs: helm
     secrets: inherit
