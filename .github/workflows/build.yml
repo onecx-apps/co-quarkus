@@ -2,11 +2,25 @@ name: build
 
 on:
   workflow_call:
+    inputs:
+      native:
+        description: 'Build native image'
+        default: false
+        required: false
+        type: boolean
+      helmEventTargetRepository:
+        description: 'Target repository'
+        default: ''
+        required: false
+        type: string
 
 jobs:
   codeql:
     uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-codeql.yml@v1
     secrets: inherit
+  liquibase:
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-liquibase.yml@v1
+    secrets: inherit    
   quarkus:
     uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build.yml@v1
     secrets: inherit
@@ -14,11 +28,34 @@ jobs:
       push: true
   sonar:
     uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-sonar.yml@v1
-    needs: quarkus
+    needs: [quarkus, liquibase]
     secrets: inherit
+  native:
+    if: ${{ inputs.native }}
+    uses: onecx-apps/ci-quarkus/.github/workflows/quarkus-build-native.yml@v1
+    secrets: inherit
+    needs: [quarkus, liquibase]
+    with:
+      push: true    
   helm:
+    if: |
+      !cancelled()
+      && needs.sonar.result == 'success'
+      && ( !inputs.native || needs.native.result == 'success')
     uses: onecx-apps/ci-common/.github/workflows/helm-build.yml@v1
-    needs: quarkus
+    needs: [sonar, native]
     secrets: inherit
     with:
       push: true
+  helm-event:
+    if: |
+      !cancelled()
+      && needs.sonar.result == 'success'
+      && needs.helm.result == 'success'
+      && ( !inputs.native || needs.native.result == 'success')
+      && inputs.helmEventTargetRepository != ''
+    uses: onecx-apps/ci-product/.github/workflows/helm-send-event.yml@v1
+    needs: [helm, sonar, native]
+    secrets: inherit
+    with:
+      targetRepository: ${{ inputs.helmEventTargetRepository }}
