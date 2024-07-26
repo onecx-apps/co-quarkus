@@ -2,6 +2,12 @@ name: "codeql"
 
 on:
   workflow_call:
+    inputs:
+      jdk:
+        description: 'JDK version'
+        default: '21'
+        required: false
+        type: string
 
 jobs:
   analyze:
@@ -18,7 +24,7 @@ jobs:
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '21'
+        java-version: ${{ inputs.jdk }}
         cache: 'maven'
     # Initializes the CodeQL tools for scanning.
     - uses: github/codeql-action/init@v3
