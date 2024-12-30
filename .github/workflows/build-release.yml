@@ -8,7 +8,11 @@ on:
         default: false
         required: false
         type: boolean
-
+      helmEventTargetRepository:
+        description: 'Target repository'
+        default: ''
+        required: false
+        type: string
 jobs:
   docker:
     uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v1
