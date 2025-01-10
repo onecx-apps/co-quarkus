@@ -8,7 +8,12 @@ on:
         default: false
         required: false
         type: boolean
-
+      helmEventTargetRepository:
+        description: 'Target repository'
+        default: ''
+        required: false
+        type: string
+        
 jobs:
   docker:
     uses: onecx-apps/ci-common/.github/workflows/docker-release.yml@v2
@@ -28,7 +33,20 @@ jobs:
     uses: onecx-apps/ci-common/.github/workflows/helm-release.yml@v2
     needs: [docker, native]
     secrets: inherit
+  helm-event:
+    if: |
+      !cancelled()
+      && needs.helm.result == 'success'
+      && inputs.helmEventTargetRepository != ''
+    uses: onecx-apps/ci-product/.github/workflows/helm-send-event.yml@v1
+    needs: [helm]
+    secrets: inherit
+    with:
+      targetRepository: ${{ inputs.helmEventTargetRepository }}
   changelog:
+    if: |
+      !cancelled()
+      && needs.helm.result == 'success'  
     uses: onecx-apps/ci-common/.github/workflows/generate-changelog.yml@v2
-    needs: helm
+    needs: [helm]
     secrets: inherit
